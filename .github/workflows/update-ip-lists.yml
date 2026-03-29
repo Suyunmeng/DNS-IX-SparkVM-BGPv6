@@ -1,0 +1,92 @@
+name: Update IP Lists
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at 00:00 UTC
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      force:
+        description: 'Force update and commit even if no changes detected'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Update IP Lists
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download and merge IPv4 SparkIX lists
+        run: |
+          # Download and append each list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/aliyuncn.txt > cn-ipv4-sparkix.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/baiducn.txt >> cn-ipv4-sparkix.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/tencentcn.txt >> cn-ipv4-sparkix.list
+          
+          # Remove duplicates and sort
+          sort -u cn-ipv4-sparkix.list -o cn-ipv4-sparkix.list
+          
+          echo "IPv4 SparkIX list updated: $(wc -l < cn-ipv4-sparkix.list) entries"
+      
+      - name: Download and merge IPv6 SparkIX lists
+        run: |
+          # Download and append each list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/aliyuncn6.txt > cn-ipv6-sparkix.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/baiducn6.txt >> cn-ipv6-sparkix.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/tencentcn6.txt >> cn-ipv6-sparkix.list
+          
+          # Remove duplicates and sort
+          sort -u cn-ipv6-sparkix.list -o cn-ipv6-sparkix.list
+          
+          echo "IPv6 SparkIX list updated: $(wc -l < cn-ipv6-sparkix.list) entries"
+      
+      - name: Download and merge IPv6 ISP lists
+        run: |
+          # Download and append each list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/cernet6.txt > cn-ipv6-isp.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/chinanet6.txt >> cn-ipv6-isp.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/cmcc6.txt >> cn-ipv6-isp.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/cstnet6.txt >> cn-ipv6-isp.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/drpeng6.txt >> cn-ipv6-isp.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/unicom6.txt >> cn-ipv6-isp.list
+          
+          # Remove duplicates and sort
+          sort -u cn-ipv6-isp.list -o cn-ipv6-isp.list
+          
+          echo "IPv6 ISP list updated: $(wc -l < cn-ipv6-isp.list) entries"
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            echo "Force update enabled, skipping change detection"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            git diff --quiet cn-ipv4-sparkix.list cn-ipv6-sparkix.list cn-ipv6-isp.list || echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit and push if changed
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add cn-ipv4-sparkix.list cn-ipv6-sparkix.list cn-ipv6-isp.list
+          
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            git commit -m "chore(lists): force update IP lists $(date -u '+%Y-%m-%d')" || echo "No files to commit"
+          else
+            git commit -m "chore(lists): update IP lists $(date -u '+%Y-%m-%d')"
+          fi
+          
+          git push
+      
+      - name: No changes detected
+        if: steps.check_changes.outputs.changed != 'true'
+        run: echo "No changes detected in IP lists"
