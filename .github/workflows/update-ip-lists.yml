@@ -50,12 +50,7 @@ jobs:
       - name: Download and merge IPv6 ISP lists
         run: |
           # Download and append each list
-          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/cernet6.txt > cn-ipv6-isp.list
-          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/chinanet6.txt >> cn-ipv6-isp.list
-          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/cmcc6.txt >> cn-ipv6-isp.list
-          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/cstnet6.txt >> cn-ipv6-isp.list
-          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/drpeng6.txt >> cn-ipv6-isp.list
-          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/unicom6.txt >> cn-ipv6-isp.list
+          curl -fsSL https://raw.githubusercontent.com/Suyunmeng/china-operator-ip/refs/heads/ip-lists/china6.txt > cn-ipv6-isp.list
           
           # Remove duplicates and sort
           sort -u cn-ipv6-isp.list -o cn-ipv6-isp.list

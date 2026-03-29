@@ -221,7 +221,7 @@ func getCacheKey(r *dns.Msg) string {
 func handleDNS(w dns.ResponseWriter, r *dns.Msg) {
 	primaryDNS := "119.29.29.29:53"
 	fallbackDNS := "1.1.1.1:53"
-	ednsClientSubnet := "183.61.225.70"
+	ednsClientSubnet := "202.46.225.4"
 
 	// Check cache first
 	cacheKey := getCacheKey(r)
